@@ -8,31 +8,39 @@ class DBClient {
     const url = `mongodb://${host}:${port}`;
 
     this.client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-    this.client
-      .connect()
+    this.client.connect()
       .then(() => {
         this.db = this.client.db(database);
-        console.log('MongoClient is connected');
       })
       .catch((err) => {
-        console.error('MongoClient is not connected', err);
+        console.error('MongoDB client not connected to the server:', err);
       });
   }
 
   isAlive() {
-    return this.client.isConnected();
+    return this.client.topology.isConnected();
   }
 
   async nbUsers() {
-    const usersCollection = this.db.collection('users');
-    return usersCollection.countDocuments();
+    try {
+      const usersCollection = this.db.collection('users');
+      return await usersCollection.countDocuments();
+    } catch (err) {
+      console.error('Error counting documents in users collection:', err);
+      return 0;
+    }
   }
 
   async nbFiles() {
-    const filesCollection = this.db.collection('files');
-    return filesCollection.countDocuments();
+    try {
+      const filesCollection = this.db.collection('files');
+      return await filesCollection.countDocuments();
+    } catch (err) {
+      console.error('Error counting documents in files collection:', err);
+      return 0;
+    }
   }
 }
 
 const dbClient = new DBClient();
-module.exports = dbClient;
+export default dbClient;
