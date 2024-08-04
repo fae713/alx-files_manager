@@ -27,13 +27,13 @@ class UsersController {
 
       const updatedDB = await dbClient.db.collection('users').insertOne(newUser);
 
-      res.status(201).json({
+      return res.status(201).json({
         email: newUser.email,
         id: updatedDB.insertedId.toString(),
       });
     } catch (err) {
       console.error('Error inserting new user:', err);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 }
