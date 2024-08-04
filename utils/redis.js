@@ -25,15 +25,19 @@ class RedisClient {
     });
   }
 
-  async set(key, value, duration) {
+  async set(key, value, mode, duration) {
     return new Promise((resolve, reject) => {
-      this.client.setex(key, duration, value, (err) => {
-        if (err) {
-          reject(new Error(`Error setting value in Redis: ${err.message}`));
-        } else {
-          resolve();
-        }
-      });
+      if (mode && duration) {
+        this.client.set(key, value, mode, parseInt(duration, 10), (err, reply) => {
+          if (err) reject(err);
+          resolve(reply);
+        });
+      } else {
+        this.client.set(key, value, (err, reply) => {
+          if (err) reject(err);
+          resolve(reply);
+        });
+      }
     });
   }
 
