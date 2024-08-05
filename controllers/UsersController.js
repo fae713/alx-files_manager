@@ -30,7 +30,7 @@ class UsersController {
       const result = await dbClient.db.collection('users').insertOne(newUser);
       const user = result.ops[0];
 
-      return res.status(201).json({ email: user.email, id: user._id });
+      return res.status(201).json({ id: user._id, email: user.email });
     } catch (err) {
       console.error('Error inserting new user:', err);
       return res.status(500).json({ error: 'Internal server error' });
@@ -58,7 +58,7 @@ class UsersController {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      return res.status(200).json({ email: user.email, id: user._id.toString() });
+      return res.status(200).json({ id: user._id.toString(), email: user.email });
     } catch (err) {
       console.error('Error retrieving user:', err);
       return res.status(500).json({ error: 'Internal server error' });
