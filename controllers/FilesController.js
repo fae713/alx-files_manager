@@ -6,7 +6,6 @@ import mime from 'mime-types';
 import Bull from 'bull';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-import imageThumbnail from 'image-thumbnail';
 
 const FOLDER_PATH = process.env.FOLDER_PATH || '/tmp/files_manager';
 const fileQueue = new Bull('fileQueue');
@@ -81,7 +80,7 @@ class FilesController {
 
     // Add job to the queue for image thumbnails
     if (type === 'image') {
-      fileQueue.add({ userId: userId, fileId: dbFolder.ops[0]._id });
+      fileQueue.add({ userId, fileId: dbFolder.ops[0]._id });
     }
 
     return res.status(201).json({
@@ -215,7 +214,7 @@ class FilesController {
     const token = req.headers['x-token'];
 
     const fileId = req.params.id;
-    const { size } = req.query
+    const { size } = req.query;
 
     const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(fileId) });
     if (!file) {
@@ -239,7 +238,7 @@ class FilesController {
 
     let filePath = file.localPath;
     if (size) {
-        filePath = `${filePath}_${size}`;
+      filePath = `${filePath}_${size}`;
     }
 
     if (!file.localPath) {

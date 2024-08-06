@@ -1,42 +1,26 @@
-import Bull from 'bull';
+import Queue from 'bull';
 import { promises as fs } from 'fs';
-import path from 'path';
-import { ObjectId } from 'mongodb';
 import imageThumbnail from 'image-thumbnail';
-import dbClient from '../utils/db';
+import { ObjectId } from 'mongodb';
+import dbClient from './utils/db';
 
-const fileQueue = new Bull('fileQueue');
+const fileQueue = new Queue('fileQueue');
 
-fileQueue.process(async (job, done) => {
-  const { fileId, userId } = job.data;
+fileQueue.process(async (job) => {
+  const { fileId } = job.data;
 
-  if (!fileId) {
-    return done(new Error('Missing fileId'));
-  }
-
-  if (!userId) {
-    return done(new Error('Missing userId'));
-  }
-
-  const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(fileId), userId: new ObjectId(userId) });
+  const file = await dbClient.db.collection('files').findOne({ _id: new ObjectId(fileId) });
   if (!file) {
-    return done(new Error('File not found'));
+    throw new Error('File not found');
   }
 
-  const options = [
-    { width: 500 },
-    { width: 250 },
-    { width: 100 }
-  ];
+  const sizes = [500, 250, 100];
+  const thumbnails = await Promise.all(sizes.map(async (size) => {
+    const thumbnail = await imageThumbnail(file.localPath, { width: size });
+    const thumbPath = `${file.localPath}_${size}`;
+    await fs.writeFile(thumbPath, thumbnail);
+    return thumbPath;
+  }));
 
-  try {
-    for (const option of options) {
-      const thumbnail = await imageThumbnail(file.localPath, option);
-      const thumbnailPath = `${file.localPath}_${option.width}`;
-      await fs.writeFile(thumbnailPath, thumbnail);
-    }
-    done();
-  } catch (error) {
-    done(error);
-  }
+  await dbClient.db.collection('files').updateOne({ _id: new ObjectId(fileId) }, { $set: { thumbnails } });
 });
